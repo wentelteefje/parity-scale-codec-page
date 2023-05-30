@@ -1,0 +1,6 @@
+baseURL = 'http://example.org/'
+languageCode = 'en-us'
+title = 'SCALE'
+theme = 'hugo-book-master'
+[params]
+  BookLogo = 'parity-logo-square.png'
