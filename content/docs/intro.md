@@ -9,7 +9,7 @@ weight: 1
 # bookSearchExclude: false
 ---
 
-![Comparison of Little-endian and Big-endian](/logo.png)
+![logo](logo.png)
 
 SCALE (<u>S</u>imple Concatenated Aggregate Little-Endian) is the data format for types used in the Parity Substrate framework.
 
