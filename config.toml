@@ -1,4 +1,4 @@
-baseURL = 'http://example.org/'
+baseURL = 'https://wentelteefje.github.io/parity-scale-codec-page/'
 languageCode = 'en-us'
 title = 'SCALE'
 theme = 'hugo-book-master'
