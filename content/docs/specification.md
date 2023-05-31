@@ -12,7 +12,7 @@ math: true
 
 # Specification
 
-As its name suggests, all SCALE type encodings are arrived at by simply concatenating the encodings of its constituents, i.e. the basic types making up the respective type. By defining an encoding for integers, we canonically arrive at the encodings for more complex types by reducing them to their integer parts. This table provides a quick overview of the SCALE codec. For more hands-on explanations refer to the [examples section](/docs/examples).
+As its name suggests, all SCALE type encodings are arrived at by simply concatenating the encodings of its constituents, i.e. the basic types making up the respective type. This table provides a quick overview of the SCALE codec. For more hands-on explanations refer to the [examples section](/docs/examples).
 
 As a visual aid the intermediary hexadecimal representation is provided as well as the final SCALE encoding.
 
@@ -40,14 +40,3 @@ As a visual aid the intermediary hexadecimal representation is provided as well 
 | Option | Options are encoded by prepending the inner encoded value of `Some` with `0x01` and encoding `None` as `0x00`. |`Some(69u8)` | `0x0100`|
 |  |  |`None` | `0x00`|
 | Enum | Enums are encoded by prepending the relevant u8 index, followed by the value if present. | `Example::Second(8u16)` | `0x010800` |
-
-Questions/Findings/Todos
-- Can compact encoding be used inside of Option and Result types as well? How?
-- It's not bijective at all? For example, the following types all map to `0x0`:
-  `None`, `false`, `Ok(())`, ...
-- Keep in mind that is non-descriptive, i.e. the type itself (+metadata) doesn't get mapped, only the values. Is it bijective in that regard?
-- It's not a prefix code, since e.g. `enc(false) = 0x00` is a prefix of any `enc(Ok(x)) = 0x00enc(x)`
-- Does `0` get its own encoding in compact mode? So there are actually 5 cases?
-- Double check if the columns follow a consistent format, in particular the encoded/decoded columns!
-- Draw diagrams for trees that map to the same encoding
-- How are floats encoded? This is documented nowhere?

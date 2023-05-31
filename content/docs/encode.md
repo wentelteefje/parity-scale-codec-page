@@ -290,9 +290,36 @@ fn main() {
 [14, 68, 65, 6c, 6c, 6f]
 [01, 10, 00, 00, ... , 00]
 ```
+## 2.6 Enums
 
+Enums are encoded by prepending the respective `u8`-index and concatenating with the encoded value of the variant, if it exists. In the following example, the indices range from $\text{0x00}$ to $\text{0x03}$.
 
-## 2.5 Using Compact Encoding in Structs
+```rust
+use parity_scale_codec::Encode;
+
+#[derive(Encode)]
+enum Example {
+    First,
+    Second(u8),
+    Third(Vec<u8>),
+    Fourth,
+}
+
+fn main() {
+    println!("{:02x?}", Example::First.encode());
+    println!("{:02x?}", Example::Second(2).encode());
+    println!("{:02x?}", Example::Third(vec![0, 1, 2, 3, 4]).encode());
+    println!("{:02x?}", Example::Fourth.encode());
+}
+[00]
+[01, 02]
+[02, 14, 00, 01, 02, 03, 04]
+[03]
+```
+
+## 3 Using Compact Encoding in Structs
+
+By using the `codec(compact)` attribute of the `derive` macro we can specify that specific fields within a `struct` or `enum` type will be compactly encoded.
 
 ```rust
 use parity_scale_codec::Encode;
