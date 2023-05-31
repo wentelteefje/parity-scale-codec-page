@@ -40,7 +40,7 @@ fn main() {
 ```
 In analogy to how the data would be stored in memory, the least significant byte is stored at the smallest vector index. Of course, this is only useful once the type is bigger than one byte.
 
-# 2 SCALE Encoding
+# 2 SCALE Encoding Basics
 This section provides code snippets to get you started with encoding your types with SCALE. 
 
 ## 2.1 Integers
@@ -128,7 +128,7 @@ fn main() {
 ```
 Note, that since SCALE is a non-descriptive encoding there's no way to distinguish between the encoded values. This will become important when decoding values.
 
-## 2.4 Compact Integer encoding
+## 2.4 Compact Integer Encoding
 
 Non-negative integers between $0$ and $2^{536} - 1$ can be more efficiently encoded using SCALE's compact encoding. While the ordinary fixed-width integer encoding depends on the size of the given integer's type (e.g. `u8`, `u16`, `u32`, ...), the compact encoding only looks at the number itself and disregards the type information. For example, the compact encodings of the integers `60u8`, `60u16` and `60u32` are all the same: $\text{Enc}\_{\text{SC}}^{\text{Comp}}(60) = \text{[0xf0]}$.
 
@@ -317,11 +317,55 @@ fn main() {
 [03]
 ```
 
-## 3 Using Compact Encoding in Structs
+# 3 Embedding Compact Encodings
+## 3.1 Structs
 
-By using the `codec(compact)` attribute of the `derive` macro we can specify that specific fields within a `struct` or `enum` type will be compactly encoded.
+By using the `codec(compact)` attribute of the `derive` macro we can specify that specific fields within a `struct` type will be compactly encoded. For example, in the following snippet we marked the `compact_number` field of the `Example` struct to be compactly encoded.
 
 ```rust
+use parity_scale_codec_derive::Encode;
 use parity_scale_codec::Encode;
 
+#[derive(Encode)]
+struct Example {
+    number: u64,
+    #[codec(compact)]
+    compact_number: u64,
+}
+
+fn main() {
+    let my_struct = Example { number: 42, compact_number: 1337 };
+    println!("{:02x?}", my_struct.encode());
+}
+[2a, 00, 00, 00, 00, 00, 00, 00, e5, 14]
 ```
+
+## 3.2 Enums
+We can proceed similarly with `enums`. In this snippet only the second `u64` of the `One` variant will be compactly encoded.
+
+```rust
+use parity_scale_codec_derive::Encode;
+use parity_scale_codec::Encode;
+
+#[derive(Encode)]
+enum Choices {
+    One(u64, #[codec(compact)] u64),
+}
+
+fn main() {
+    let my_choice = Choices::One(42, 1337);
+    println!("{:02x?}", my_choice.encode());
+}
+[00, 2a, 00, 00, 00, 00, 00, 00, 00, e5, 14]
+```
+
+<!-- # 4. SCALE-native Traits
+
+```rust
+/// Trait that tells you if a given type can be encoded/decoded in a compact way.
+pub trait HasCompact: Sized {
+	/// The compact type; this can be
+	type Type: for<'a> EncodeAsRef<'a, Self> + Decode + From<Self> + Into<Self>;
+}
+```
+Therefore, any type implementing `HasCompact` must also implement `Sized`.  -->

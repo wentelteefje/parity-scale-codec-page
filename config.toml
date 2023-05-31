@@ -2,5 +2,10 @@ baseURL = 'https://wentelteefje.github.io/parity-scale-codec-page/'
 languageCode = 'en-us'
 title = 'SCALE'
 theme = 'hugo-book-master'
+enableGitInfo = true
 [params]
   BookLogo = 'parity-logo-square.png'
+[markup]
+  [markup.tableOfContents]
+    endLevel = 3
+    startLevel = 1
