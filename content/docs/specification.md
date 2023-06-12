@@ -14,7 +14,7 @@ math: true
 
 SCALE defines encodings for native Rust types, and constructs encodings for composite types, such as structs, by concatenating the encodings of their constituents – that is, the elementary types that form these respective complex types. Additionally, some variable-length types are encoded with their length prefixed. In this way, the encoding of any type can be simplified to the concatenation of encodings of less complex types.
 
-This table offers a concise overview of the SCALE codec with examples. For more detailed, hands-on explanations, please refer to the [encode section]({{< ref "/docs/encode" >}}). For the formal specification, please refer to the relevant page of the [Polkadot specification](https://spec.polkadot.network/id-cryptography-encoding#sect-scale-codec).
+This table offers a concise overview of the SCALE codec with examples. For more detailed, hands-on explanations, please refer to the [encode section]({{< ref "/docs/encode" >}}).
 
 | Data type | Encoding Description |  SCALE decoded value	| SCALE encoded value |
 | --        | --          | -- | -- |
@@ -27,7 +27,7 @@ This table offers a concise overview of the SCALE codec with examples. For more 
 |         | Single-byte mode: Upper six bits are the LE encoding of the value. For $0 \leq n \leq 2^6 - 1$. |`0u8` | `[00]` |
 |         | Two-byte mode: Upper six bits and the following byte is the LE encoding of the value. For $2^6 \leq n \leq 2^{14} - 1$. |`69u8` | `[15, 01]` | 
 |         | Four-byte mode: Upper six bits and the following three bytes are the LE encoding of the value. For $2^{14} \leq n \leq 2^{30} - 1$. |`65535u32` | `[fe, ff, 03, 00]` |
-|         | Big-integer mode: The upper six bits are the number of bytes following, plus four. The value is contained, LE encoded, in the bytes following. The final (most significant) byte must be non-zero. For $2^{30} \leq n \leq 2^{536} - 1$. |`1073741824u64` | `[03, 00, 00, 00, 40]` |
+|         | Big-integer mode: The upper six bits are the number of bytes following, minus four. The value is contained, LE encoded, in the bytes following. The final (most significant) byte must be non-zero. For $2^{30} \leq n \leq 2^{536} - 1$. |`1073741824u64` | `[03, 00, 00, 00, 40]` |
 | Vector | Encoded by concatening the encodings of its items and prefixing with the compactly encoded length of the vector. |`vec![1u8, 2u8, 4u8]` | `[0c, 01, 02, 04]` |
 | String | Encoded as `Vec<u8>` with UTF-8 characters. | `"SCALE♡"` | `[20, 53, 43, 41, 4c, 45, e2, 99, a1]` |
 | Tuple, Struct, Array | Encoded by concatenating the encodings of their respective elements consecutively. |`(1u8, true, "OK")` | `[01, 01, 08, 4f, 4b]` |

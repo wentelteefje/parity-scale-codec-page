@@ -41,7 +41,7 @@ fn main() {
 In analogy to how the data would be stored in memory, the least significant byte is stored at the smallest vector index. Of course, this is only useful once the type is bigger than one byte.
 
 # 2 SCALE Encoding Basics
-This section provides code snippets to get you started with encoding your types with SCALE. 
+This section provides code snippets to get you started with encoding your types using SCALE. The `Encode` trait is used for encoding of data into the SCALE format. For types implementing it the `encode()`-method can be used to obtain the encoding as a vector `Vec<u8>`. You can find the list of natively supported types here. However, in the following we will go through the most common types.
 
 ## 2.1 Integers
 
@@ -130,7 +130,7 @@ Note, that since SCALE is a non-descriptive encoding there's no way to distingui
 
 ## 2.4 Compact Integer Encoding
 
-Non-negative integers between $0$ and $2^{536} - 1$ can be more efficiently encoded using SCALE's compact encoding. While the ordinary fixed-width integer encoding depends on the size of the given integer's type (e.g. `u8`, `u16`, `u32`, ...), the compact encoding only looks at the number itself and disregards the type information. For example, the compact encodings of the integers `60u8`, `60u16` and `60u32` are all the same: $\text{Enc}\_{\text{SC}}^{\text{Comp}}(60) = \text{[0xf0]}$.
+Unsigned integers between $0$ and $2^{536} - 1$ can on average be more efficiently encoded using SCALE's compact encoding. While the ordinary fixed-width integer encoding depends on the size of the given integer's type (e.g. `u8`, `u16`, `u32`, ...), the compact encoding only looks at the number itself and disregards the type information. For example, the compact encodings of the integers `60u8`, `60u16` and `60u32` are all the same: $\text{Enc}\_{\text{SC}}^{\text{Comp}}(60) = \text{[0xf0]}$.
 
  It can be used by defining a wrapper struct and deriving the `Encode` trait for it. Here, the `codec(compact)` attribute of the derive macro makes the field following it use compact encoding.
 
@@ -244,10 +244,10 @@ fn main() {
 ```
 ### 2.4.4 Big-integer mode
 
-This mode is intended for non-negative integers between $2^{30}$ and $2^{536} - 1$. It differs from the other three modes in that it is a variable length encoding. Therefore, the first byte of a numbers compact encoding in big-integer mode is used to store the length $m$ of the actual encoding. As a first example, consider the case $n = 2^{30} = 1073741824$. This number's LE encoding is given by:
+This mode is intended for non-negative integers between $2^{30}$ and $2^{536} - 1$. It differs from the other three modes in that it is a variable length encoding. As a first example, consider the case $n = 2^{30} = 1073741824$. This number's LE encoding is given by:
 $$0b 01000000\\;00000000\\;00000000\\;00000000 = \text{[0x00, 0x00, 0x00, 0x40]}.$$
 
-Now, in big-integer mode, the six most significant bits of the first byte are used to store the number of bytes used in the actual encoding of the number *minus four*. That is $m - 4$. Since the LE encoding of $n$ is exactly of length $4$, the upper six bits of the first byte must all be equal to zero. In accordance with the other cases, the mode is indicated using the two least significant bits of the first byte. For big-integer mode we append ${\color{red}11}$ to obtain as the first byte:
+Now, in big-integer mode, the six most significant bits of the first byte are used to store the number of bytes $m$ used in the actual encoding of the number *minus four*. That is $m - 4$. Since the LE encoding of $n$ is exactly of length $m = 4$, the upper six bits of the first byte must all be equal to zero. In accordance with the other cases, the mode is indicated using the two least significant bits of the first byte. For big-integer mode we append ${\color{red}11}$ to obtain as the first byte:
 $$ 0 = m - 4 = 0b000000 \Longrightarrow 0b000000{\color{red}11} = 3.$$
 In total, the compact encoding $\text{Enc}\_{\text{SC}}^{\text{Comp}}(n)$ is given by the byte array:
 $$\text{[0x03, 0x00, 0x00, 0x00, 0x40]}.$$
@@ -256,6 +256,8 @@ Let's look at another example. The LE encoding of the number $n = 2^{32} = 42949
 $$ 1 = m - 4 = 0b000001 \Longrightarrow 0b000001{\color{red}11} = 7. $$
 Altogether, the compact encoding $\text{Enc}\_{\text{SC}}^{\text{Comp}}(n)$ is given by the byte array:
 $$\text{[0x07, 0x00, 0x00, 0x00, 0x00, 0x01]}.$$
+
+Note: The rationale behind storing $m-4$, rather than $m$ directly, lies in maximizing the efficiency of the available six bits, given that these bits set the limit for the size of integers we can compact encode. The smallest integer in big-integer mode, $2^{30}$, has a LE encoding that consists of $4$ bytes. Encoding this as $0b000010{\color{red}11}$ would inefficiently utilize the available space. By choosing to encode $m - 4$ instead, the first six bits can accommodate a length of $63 + 4$. This approach allows for the encoding of integers up to $2^{(63+4)8} - 1 = 2^{536} - 1$.
 ```rust
 use parity_scale_codec::{Encode, HasCompact};
 use parity_scale_codec_derive::Encode;
@@ -318,9 +320,11 @@ fn main() {
 ```
 
 # 3 Embedding Compact Encodings
+We can also embed compact integer encodings within within other types to make them more efficient.
+
 ## 3.1 Structs
 
-By using the `codec(compact)` attribute of the `derive` macro we can specify that specific fields within a `struct` type will be compactly encoded. For example, in the following snippet we marked the `compact_number` field of the `Example` struct to be compactly encoded.
+By using the `codec(compact)` attribute of the `derive` macro we can specify that selected fields within a `struct` type will be compactly encoded. For example, in the following snippet we marked the `compact_number` field of the `Example` struct to be compactly encoded.
 
 ```rust
 use parity_scale_codec_derive::Encode;
@@ -359,13 +363,59 @@ fn main() {
 [00, 2a, 00, 00, 00, 00, 00, 00, 00, e5, 14]
 ```
 
-<!-- # 4. SCALE-native Traits
+# 4. Using SCALE in Substrate Pallet Development
+
+## 4.1 General Workflow
+
+Pallets interact with the SCALE codec when their data structures need to be serialized for storage or network transmission, or deserialized for processing. The usage of SCALE in pallet and runtime development is straightforward and usually handled by simply deriving `Encode` and `Decode` for your data types. The general workflow is depicted in the following diagram.
+
+{{<mermaid align="left">}}
+graph LR;
+    A[Define custom data type] --> B[Derive Encode/Decode for the type]
+    B --> C[Store serialized data on-chain]
+    C --> D[Read data from storage]
+    D --> E[Automatically decode the data]
+{{< /mermaid >}}
+
+## 4.2 Case Study: Balances Pallet
+
+We illustrate this approach using an example taken from the [balances pallet](https://paritytech.github.io/substrate/master/pallet_balances/index.html). 
+
+First, the `AccountData` struct is defined in `types.rs`, with `Encode`, `Decode` and some other traits derived. This allows it to be automatically encoded and decoded when stored in Substrate's storage or when being part of the event parameters.
 
 ```rust
-/// Trait that tells you if a given type can be encoded/decoded in a compact way.
-pub trait HasCompact: Sized {
-	/// The compact type; this can be
-	type Type: for<'a> EncodeAsRef<'a, Self> + Decode + From<Self> + Into<Self>;
+/// All balance information for an account.
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+pub struct AccountData<Balance> {
+	pub free: Balance,
+	pub reserved: Balance,
+	pub frozen: Balance,
+	pub flags: ExtraFlags,
 }
 ```
-Therefore, any type implementing `HasCompact` must also implement `Sized`.  -->
+
+Next, the `balances` pallet uses the `AccountData` struct to represent all balance information for a given account. This data is stored in the `Account` storage map, where each `AccountId` is mapped to its corresponding `AccountData`.
+
+```rust
+#[pallet::storage]
+pub type Account<T: Config<I>, I: 'static = ()> =
+    StorageMap<_, Blake2_128Concat, T::AccountId, AccountData<T::Balance>, ValueQuery>;
+```
+The `Account` storage map is part of the pallet's storage and defined within the `#[pallet::storage]` macro of the `lib.rs` file. With the `Encode` and `Decode` traits derived for `AccountData`, any data written to or read from this storage map will be automatically encoded or decoded.
+
+## 4.3 Automatic Decoding in Action
+
+When the balances pallet needs to read an account's balance from storage, the decoding happens automatically. Here is the `balance` function from the Balances pallet:
+
+```rust
+fn balance(who: &T::AccountId) -> Self::Balance {
+	Self::account(who).free
+}
+```
+This function retrieves the `AccountData` of the given account from the storage, then returns the free balance field of the struct. The function chain involved in fetching the data from storage, decoding it, and accessing the data fields is abstracted away by the Substrate framework, demonstrating the utility of SCALE and Substrate's storage APIs. 
+
+By following this pattern - defining your data types, deriving the appropriate traits, and using Substrate's storage APIs - you can seamlessly work with serialized data in your pallet development, keeping the complexity of serialization and deserialization hidden away.
+
+# 5. Implementation Details - Traits
+
+[link to Rust docs]
