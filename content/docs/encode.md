@@ -369,12 +369,25 @@ fn main() {
 
 Pallets interact with the SCALE codec when their data structures need to be serialized for storage or network transmission, or deserialized for processing. The usage of SCALE in pallet and runtime development is straightforward and usually handled by simply deriving `Encode` and `Decode` for your data types. The general workflow is depicted in the following diagram.
 
-{{<mermaid align="left">}}
-graph LR;
-    A[Define custom data type] --> B[Derive Encode/Decode for the type]
-    B --> C[Store serialized data on-chain]
-    C --> D[Read data from storage]
-    D --> E[Automatically decode the data]
+{{<mermaid>}}
+flowchart TB
+
+subgraph Step1[Step 1: Define Data Type]
+    DataType["Data Type (e.g., AccountData)"] -->|Derive Encode and Decode| EncDec[Encode/Decode Traits]
+end
+
+subgraph Step2[Step 2: Store Encoded Data]
+    EncDec --> Storage["Substrate Storage (e.g., StorageMap)"]
+    Storage -->|"Hasher (e.g., Blake2_128Concat)"| HashedKey[Hashed Key]
+    Storage -->|Encoded Data| EncodedValue[Encoded Value]
+end
+
+subgraph Step3[Step 3: Retrieve and Decode Data]
+    HashedKey --> Retrieve[Retrieve from storage by key]
+    Retrieve --> DecodedValue[Decoded Value]
+    EncodedValue --> Decode[Decode function]
+    Decode --> DecodedValue
+end
 {{< /mermaid >}}
 
 ## 4.2 Case Study: Balances Pallet
@@ -412,7 +425,7 @@ fn balance(who: &T::AccountId) -> Self::Balance {
 	Self::account(who).free
 }
 ```
-This function retrieves the `AccountData` of the given account from the storage, then returns the free balance field of the struct. The function chain involved in fetching the data from storage, decoding it, and accessing the data fields is abstracted away by the Substrate framework, demonstrating the utility of SCALE and Substrate's storage APIs. 
+This function retrieves the `AccountData` of the given account from the storage, then returns the `free` balance field of the struct. The function chain involved in fetching the data from storage, decoding it, and accessing the data fields is abstracted away by the Substrate framework, demonstrating the utility of SCALE and Substrate's storage APIs. 
 
 By following this pattern - defining your data types, deriving the appropriate traits, and using Substrate's storage APIs - you can seamlessly work with serialized data in your pallet development, keeping the complexity of serialization and deserialization hidden away.
 
