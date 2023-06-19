@@ -41,7 +41,7 @@ fn main() {
 In analogy to how the data would be stored in memory, the least significant byte is stored at the smallest vector index. Of course, this is only useful once the type is bigger than one byte.
 
 # 2 SCALE Encoding Basics
-This section provides code snippets to get you started with encoding your types using SCALE. The `Encode` trait is used for encoding of data into the SCALE format. For types implementing it the `encode()`-method can be used to obtain the encoding as a vector `Vec<u8>`. You can find the list of natively supported types here. However, in the following we will go through the most common types.
+This section provides code snippets to get you started with encoding your types using SCALE. The `Encode` trait is used for encoding of data into the SCALE format. For types implementing it the `encode()`-method can be used to obtain the encoding as a `Vec<u8>`.
 
 ## 2.1 Integers
 
@@ -257,7 +257,11 @@ $$ 1 = m - 4 = 0b000001 \Longrightarrow 0b000001{\color{red}11} = 7. $$
 Altogether, the compact encoding $\text{Enc}\_{\text{SC}}^{\text{Comp}}(n)$ is given by the byte array:
 $$\text{[0x07, 0x00, 0x00, 0x00, 0x00, 0x01]}.$$
 
-Note: The rationale behind storing $m-4$, rather than $m$ directly, lies in maximizing the efficiency of the available six bits, given that these bits set the limit for the size of integers we can compact encode. The smallest integer in big-integer mode, $2^{30}$, has a LE encoding that consists of $4$ bytes. Encoding this as $0b000010{\color{red}11}$ would inefficiently utilize the available space. By choosing to encode $m - 4$ instead, the first six bits can accommodate a length of $63 + 4$. This approach allows for the encoding of integers up to $2^{(63+4)8} - 1 = 2^{536} - 1$.
+{{< hint info >}}
+**Note**: The rationale behind storing $m-4$, rather than $m$ directly, lies in maximizing the efficiency of the available six bits, given that these bits set the limit for the size of integers we can compact encode. The smallest integer in big-integer mode, $2^{30}$, has a LE encoding that consists of $4$ bytes. Encoding this as $0b000010{\color{red}11}$ would inefficiently utilize the available space. By choosing to encode $m - 4$ instead, the first six bits can accommodate a length of $63 + 4$. This approach allows for the encoding of integers up to $2^{(63+4)8} - 1 = 2^{536} - 1$.
+{{< /hint >}}
+
+
 ```rust
 use parity_scale_codec::{Encode, HasCompact};
 use parity_scale_codec_derive::Encode;
@@ -370,8 +374,8 @@ fn main() {
 Pallets interact with the SCALE codec when their data structures need to be serialized for storage or network transmission, or deserialized for processing. The usage of SCALE in pallet and runtime development is straightforward and usually handled by simply deriving `Encode` and `Decode` for your data types. The general workflow is depicted in the following diagram.
 
 {{<mermaid>}}
+%%{init: {'theme':'neutral'}}%%
 flowchart TB
-
 subgraph Step1[Step 1: Define Data Type]
     DataType["Data Type (e.g., AccountData)"] -->|Derive Encode and Decode| EncDec[Encode/Decode Traits]
 end
@@ -431,4 +435,41 @@ By following this pattern - defining your data types, deriving the appropriate t
 
 # 5. Implementation Details - Traits
 
-[link to Rust docs]
+The following section introduces some other important traits of SCALE used in Substrate. For a comprehensive list of traits employed in SCALE please refer to the [SCALE rust docs](https://docs.rs/parity-scale-codec/latest/parity_scale_codec/).
+## 5.1 MaxEncodedLen
+The `MaxEncodedLen` trait is an important part of the SCALE encoding system utilized in Substrate. It provides a method for defining the maximum length, in bytes, that a type will take up when it is SCALE-encoded. This is particularly useful for putting an upper limit on the size of encoded data, enabling checks against this maximum length to reject overly large data.
+
+```rust
+pub trait MaxEncodedLen: Encode {
+	/// Upper bound, in bytes, of the maximum encoded size of this item.
+	fn max_encoded_len() -> usize;
+}
+```
+A concrete example of its usage can be seen in Substrate's [democracy pallet](https://paritytech.github.io/substrate/master/pallet_democracy/index.html), specifically in how it is implemented for the `Vote` struct:
+```rust
+/// A number of lock periods, plus a vote, one way or the other.
+#[derive(Copy, Clone, Eq, PartialEq, Default, RuntimeDebug)]
+pub struct Vote {
+	pub aye: bool,
+	pub conviction: Conviction,
+}
+```
+The `Vote` struct contains two fields: `aye` (a boolean indicating a positive or negative vote) and `conviction` (an enum indicating the conviction level of the vote with $7$ variants). Despite the presence of multiple enum variants and a boolean, the Democracy pallet implements the `MaxEncodedLen` trait for Vote to fit within $1$ byte:
+```rust
+impl MaxEncodedLen for Vote {
+	fn max_encoded_len() -> usize {
+		1
+	}
+}
+```
+The encoding scheme for the `Vote` struct involves a clever utilization of the single byte's capacity. Here's how the `Vote` struct's `Encode` trait is implemented:
+```rust
+impl Encode for Vote {
+	fn encode_to<T: Output + ?Sized>(&self, output: &mut T) {
+		output.push_byte(u8::from(self.conviction) | if self.aye { 0b1000_0000 } else { 0 });
+	}
+}
+```
+In this custom `Encode` implementation, the `Conviction` enum, which is represented as a `u8`, is encoded into the least significant $3$ bits of the byte. The `aye` bool, denoting whether the vote is in favor or against, is encoded into the most significant bit of the byte. If the vote is in favor (`aye` is true), the bit is set to $1$ ($0b10000000$ in binary), and if the vote is against (`aye` is false), the bit is set to $0$.
+
+This way, both `aye` and `conviction` are packed together into a single byte, ensuring that the data structure remains as compact as possible. This example demonstrates how the `MaxEncodedLen` trait can be effectively used to control the size of encoded data in Substrate pallet development.
