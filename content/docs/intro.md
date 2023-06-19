@@ -9,7 +9,7 @@ weight: 1
 # bookSearchExclude: false
 ---
 
-![logo](/logo.png)
+![logo](logo.png)
 {{< hint info >}}
 **SCALE** (**S**imple **C**oncatenated **A**ggregate **L**ittle-**E**ndian) is the data format for types used in the Parity Substrate framework. It is a light-weight format which allows encoding (and decoding) which makes it highly suitable for resource-constrained execution environments like blockchain runtimes and low-power, low-memory devices.
 {{< /hint >}}
