@@ -52,6 +52,20 @@ Further reading: {{< fontawesome "rust" >}}[docs.rs](https://docs.rs/scale-decod
 {{< /hint >}}
 
 # 3. `scale-value`
+
+{{<mermaid>}}
+flowchart TD
+    SD[[scale-value]]
+    SDT1(Value)
+    SDT1-- struct -->SD
+{{</mermaid>}}
+
+This crate provides a `Value` type, which is a runtime representation that is compatible with type descriptions from `scale-info`. It somewhat analogous to a `serde_json::Value`, which is a runtime representation of JSON values, but with a focus on SCALE encoded values instead of JSON encoded values. Unlike JSON however, SCALE encoding is not self describing, and so we need additional type information to tell us how to encode and decode values. It is expected that this crate will commonly be used in conjunction with the `scale-info` and `frame-metadata` crates.
+
+{{< hint info >}}
+Further reading: {{< fontawesome "rust" >}}[docs.rs](https://docs.rs/scale-value/latest/scale_value/) | {{< fontawesome "github" >}}[Github](https://github.com/paritytech/scale-value) | {{< fontawesome "box" >}}[Crates.io](https://crates.io/crates/scale-value)
+{{< /hint >}}
+
 # 4. `frame-metadata`
 
 While not directly a part of SCALE, the `frame-metadata` crate utilizes a `Registry` from the `scale-info` crate. The `frame-metadata` crate provides a struct that encapsulates metadata about a Substrate runtime. A notable aspect of this struct is a type registry, which is a collection of all types utilized in the metadata of the runtime. In addition, the struct comprises comprehensive data on the runtime's pallets, extrinsics, Runtime API, outer enums, and even accommodates custom metadata. The collective use of these elements allows developers to effectively navigate and adapt to the intricacies of a specific Substrate-based blockchain runtime.
