@@ -19,7 +19,9 @@ Welcome to the technical documentation of the [Rust implementation](https://gith
 This page is divided into the following sections:
 - **Encode**: This section provides a practical introduction to how SCALE is used to encode types in Rust, complete with examples. It is recommended to read this section before proceeding to the Decode section.
 - **Decode**: This section explains how to decode SCALE-encoded data and addresses common misconceptions and challenges related to SCALE's non-descriptive nature.
-- **Specification**: This page offers a brief overview of the SCALE encoding process.
+- **Use in Substrate**: This section outlines how SCALE is utilized in Substrate development and showcases common patterns.
+- **Specification**: This section offers a brief overview of the SCALE encoding process.
+- **SCALE crates**: This page provides a high-level overview of the various available SCALE Rust crates and their uses.
 
 SCALE is non-descriptive. This means that the encoding context, which includes knowledge of the types and data structures, must be known separately at both the encoding and decoding ends. The encoded data does not include this contextual information. Consider the following comparison between SCALE and JSON to understand what this means in practice. 
 {{< tabs "SCALEvsJSON" >}}
