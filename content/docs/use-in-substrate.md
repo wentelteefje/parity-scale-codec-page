@@ -76,11 +76,11 @@ This function retrieves the `AccountData` of the given account from the storage,
 
 By following this pattern - defining your data types, deriving the appropriate traits, and using Substrate's storage APIs - you can seamlessly work with serialized data in your pallet development, keeping the complexity of serialization and deserialization hidden away.
 
-# 2. Common Traits
+# 2. Common Patterns
 
-The following section introduces some other important traits of SCALE used in Substrate. For a comprehensive list of traits employed in SCALE please refer to the [SCALE rust docs](https://docs.rs/parity-scale-codec/latest/parity_scale_codec/).
+The following section introduces some important patterns used in Substrate. For a comprehensive list of traits employed in SCALE please refer to the [SCALE rust docs](https://docs.rs/parity-scale-codec/latest/parity_scale_codec/).
 
-## 2.1 MaxEncodedLen
+## 2.1 The `MaxEncodedLen` Trait
 The `MaxEncodedLen` trait is an important part of the SCALE encoding system utilized in Substrate. It provides a method for defining the maximum length, in bytes, that a type will take up when it is SCALE-encoded. This is particularly useful for putting an upper limit on the size of encoded data, enabling checks against this maximum length to reject overly large data.
 
 ```rust

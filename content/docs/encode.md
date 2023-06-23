@@ -23,7 +23,7 @@ SCALE encoded types are stored in little-endian (LE) mode. Little-endian systems
 |LE mode | $\text{0x0d}$ | $\text{0x0c}$ | $\text{0x0b}$ | $\text{0x0a}$ |
 |BE mode | $\text{0x0a}$ | $\text{0x0b}$ | $\text{0x0c}$ | $\text{0x0d}$ |
 
-Note, that endianness is not a property of numbers themselves and therefore not reflected in their binary or hexadecimal representations. However, in Rust you can use the `to_le_bytes()`-method to obtain a little-endian vector representation of an integer. For example:
+It's important to understand that endianness isn't a property of numbers themselves, and therefore, it isn't reflected in their binary or hexadecimal representations. However, Rust provides methods to handle endianness explicitly. For instance, the `to_le_bytes()` method can be used to obtain a little-endian byte vector representation of an integer. See the example below:
 
 ```rust
 fn main() {
@@ -41,65 +41,10 @@ fn main() {
 In analogy to how the data would be stored in memory, the least significant byte is stored at the smallest vector index. Of course, this is only useful once the type is bigger than one byte.
 
 # 2 SCALE Encoding Basics
-This section provides code snippets to get you started with encoding your types using SCALE. The `Encode` trait is used for encoding of data into the SCALE format. For types implementing it the `encode()`-method can be used to obtain the encoding as a `Vec<u8>`.s
+## 2.1 Introduction
+This section offers practical examples to help you understand how to encode your types using SCALE. SCALE encoding is facilitated by the `Encode` trait offered by the `parity-scale-codec` crate. For an overview of how common types are encoded by SCALE, please refer to the [specification]({{< ref "/docs/specification" >}}).
 
-## 2.1 Integers
-
-Out of the box integers in SCALE follow a fixed-width Little-endian encoding. Just call the `encode()`-method on your integers to encode them using SCALE.
-
-```rust
-use parity_scale_codec::Encode;
-
-fn main() {
-    println!("{:02x?}", 69i8.encode());
-    println!("{:02x?}", 42u16.encode());
-    println!("{:02x?}", 16777215u32.encode());
-}
-
-[45]
-[2a, 00]
-[ff, ff, ff, 00]
-```
-
-## 2.2 Unit and Booleans
-
-The SCALE encoding for the unit type `()` is equal to a byte array of length zero. As for booleans, `true` is encoded as `0x01` and `false` as `0x00`.
-
-```rust
-use parity_scale_codec::Encode;
-
-fn main() {
-println!("{:02x?}", ().encode());
-    println!("{:02x?}", true.encode());
-    println!("{:02x?}", false.encode());
-}
-[]
-[0x01]
-[0x00]
-```
-
-## 2.3 Options and Results
-
-If the option is `Some` and contains a value it is encoded by `0x01` followed by the encoded value. `None` is encoded by `0x00`. An `Ok(T)` result is encoded by `0x00` followed by the encoded value of `T`, whereas an `Err(E)` result is encoded by `0x01` followed by the encoded error `E`.
-
-```rust
-use parity_scale_codec::Encode;
-
-fn main() {
-    println!("{:02x?}", Ok::<u32, ()>(42u32).encode());
-    println!("{:02x?}", Err::<u32, ()>(()).encode());
-    println!("{:02x?}", Some(42u32).encode());
-    println!("{:02x?}", None::<u32>.encode());
-}
-[00, 2a, 00, 00, 00]
-[01]
-[01, 2a, 00, 00, 00]
-[00]
-```
-
-## 2.2 Tuples, Arrays and Structs
-
-Tuples, arrays and structs are all fixed-length data types in Rust and hence encoded by simply concatenating their respective items. For structs you need to derive the `Encode` trait before being able to encode them.
+To obtain the SCALE-encoded bytes as a `Vec<u8>`, use the `encode()` method on types that implement the `Encode` trait. For composite types such as structs and enums, you must first derive the `Encode` trait using the `parity-scale-codec-derive` crate before attempting to encode.
 
 ```rust
 use parity_scale_codec::Encode;
@@ -126,9 +71,10 @@ fn main() {
 [00, 01, 01, 45, 00, 00, 00]
 [00, 01, 01, 45, 00, 00, 00]
 ```
-Note, that since SCALE is a non-descriptive encoding there's no way to distinguish between the encoded values. This will become important when decoding values.
 
-## 2.4 Compact Integer Encoding
+In this example, the output demonstrates the encoded form of a byte array, a tuple, and a struct, all in hexadecimal format.
+
+## 2.2 Compact Integer Encoding
 
 Unsigned integers between $0$ and $2^{536} - 1$ can on average be more efficiently encoded using SCALE's compact encoding. While the ordinary fixed-width integer encoding depends on the size of the given integer's type (e.g. `u8`, `u16`, `u32`, ...), the compact encoding only looks at the number itself and disregards the type information. For example, the compact encodings of the integers `60u8`, `60u16` and `60u32` are all the same: $\text{Enc}\_{\text{SC}}^{\text{Comp}}(60) = \text{[0xf0]}$.
 
@@ -281,52 +227,10 @@ fn main() {
 [07, 00, 00, 00, 00, 01]
 ```
 
-## 2.5 Vectors and Strings
-Vectors are encoded by concatenating their encoded items and prepending their compact encoded length. Strings are encoded as `u8`-vectors consisting of UTF-8 encoded bytes.
+## 2.3 Embedding Compact Encodings
+We can also embed compact integer encodings within other types to make them more efficient.
 
-```rust
-use parity_scale_codec::Encode;
-
-fn main() {
-    println!("{:02x?}", vec![0u8, 1u8, 2u8, 3u8, 4u8].encode());
-    println!("{:02x?}", "hello".encode());
-    println!("{:02x?}", vec![0u8; 1024].encode());
-}
-[14, 00, 01, 02, 03, 04]
-[14, 68, 65, 6c, 6c, 6f]
-[01, 10, 00, 00, ... , 00]
-```
-## 2.6 Enums
-
-Enums are encoded by prepending the respective `u8`-index and concatenating with the encoded value of the variant, if it exists. In the following example, the indices range from $\text{0x00}$ to $\text{0x03}$.
-
-```rust
-use parity_scale_codec::Encode;
-
-#[derive(Encode)]
-enum Example {
-    First,
-    Second(u8),
-    Third(Vec<u8>),
-    Fourth,
-}
-
-fn main() {
-    println!("{:02x?}", Example::First.encode());
-    println!("{:02x?}", Example::Second(2).encode());
-    println!("{:02x?}", Example::Third(vec![0, 1, 2, 3, 4]).encode());
-    println!("{:02x?}", Example::Fourth.encode());
-}
-[00]
-[01, 02]
-[02, 14, 00, 01, 02, 03, 04]
-[03]
-```
-
-# 3 Embedding Compact Encodings
-We can also embed compact integer encodings within within other types to make them more efficient.
-
-## 3.1 Structs
+### 2.3.1 Structs
 
 By using the `codec(compact)` attribute of the `derive` macro we can specify that selected fields within a `struct` type will be compactly encoded. For example, in the following snippet we marked the `compact_number` field of the `Example` struct to be compactly encoded.
 
@@ -348,7 +252,7 @@ fn main() {
 [2a, 00, 00, 00, 00, 00, 00, 00, e5, 14]
 ```
 
-## 3.2 Enums
+### 2.3.2 Enums
 We can proceed similarly with `enums`. In this snippet only the second `u64` of the `One` variant will be compactly encoded.
 
 ```rust
