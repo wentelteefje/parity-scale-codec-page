@@ -14,32 +14,11 @@ math: true
 
 ## 1.1 General Workflow
 
-Pallets interact with the SCALE codec when their data structures need to be serialized for storage or network transmission, or deserialized for processing. The usage of SCALE in pallet and runtime development is straightforward and usually handled by simply deriving `Encode` and `Decode` for your data types. The general workflow is depicted in the following diagram.
-
-{{<mermaid>}}
-%%{init: {'theme':'neutral'}}%%
-flowchart TB
-subgraph Step1[Step 1: Define Data Type]
-    DataType["Data Type (e.g., AccountData)"] -->|Derive Encode and Decode| EncDec[Encode/Decode Traits]
-end
-
-subgraph Step2[Step 2: Store Encoded Data]
-    EncDec --> Storage["Substrate Storage (e.g., StorageMap)"]
-    Storage -->|"Hasher (e.g., Blake2_128Concat)"| HashedKey[Hashed Key]
-    Storage -->|Encoded Data| EncodedValue[Encoded Value]
-end
-
-subgraph Step3[Step 3: Retrieve and Decode Data]
-    HashedKey --> Retrieve[Retrieve from storage by key]
-    Retrieve --> DecodedValue[Decoded Value]
-    EncodedValue --> Decode[Decode function]
-    Decode --> DecodedValue
-end
-{{< /mermaid >}}
+Pallets interact with the SCALE codec when their data structures need to be serialized for storage or network transmission, or deserialized for processing. The usage of SCALE in pallet and runtime development is straightforward and usually handled by simply deriving `Encode` and `Decode` for your data types.
 
 ## 1.2 Case Study: Balances Pallet
 
-We illustrate this approach using an example taken from the [balances pallet](https://paritytech.github.io/substrate/master/pallet_balances/index.html). 
+We illustrate this approach using an example taken from the [balances pallet](https://docs.rs/pallet-balances/22.0.0/pallet_balances/). 
 
 First, the `AccountData` struct is defined in `types.rs`, with `Encode`, `Decode` and some other traits derived. This allows it to be automatically encoded and decoded when stored in Substrate's storage or when being part of the event parameters.
 

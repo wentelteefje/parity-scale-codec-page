@@ -42,7 +42,7 @@ In analogy to how the data would be stored in memory, the least significant byte
 
 # 2 SCALE Encoding Basics
 ## 2.1 Introduction
-This section offers practical examples to help you understand how to encode your types using SCALE. SCALE encoding is facilitated by the `Encode` trait offered by the `parity-scale-codec` crate. For an overview of how common types are encoded by SCALE, please refer to the [specification]({{< ref "/docs/specification" >}}).
+This section offers practical examples to help you understand how to encode your types using SCALE. SCALE encoding is facilitated by the `Encode` trait offered by the `parity-scale-codec` crate. For an overview of how common types are encoded by SCALE, please refer to the [specification]({{< ref "/specification" >}}).
 
 To obtain the SCALE-encoded bytes as a `Vec<u8>`, use the `encode()` method on types that implement the `Encode` trait. For composite types such as structs and enums, you must first derive the `Encode` trait using the `parity-scale-codec-derive` crate before attempting to encode.
 

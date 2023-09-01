@@ -1,5 +1,5 @@
 ---
-title: "Intro"
+title: "Index"
 weight: 1
 # bookFlatSection: false
 # bookToc: true

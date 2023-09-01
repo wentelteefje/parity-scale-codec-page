@@ -14,7 +14,7 @@ math: true
 
 SCALE defines encodings for native Rust types, and constructs encodings for composite types, such as structs, by concatenating the encodings of their constituents – that is, the elementary types that form these respective complex types. Additionally, some variable-length types are encoded with their length prefixed. In this way, the encoding of any type can be simplified to the concatenation of encodings of less complex types.
 
-This table offers a concise overview of the SCALE codec with examples. For more detailed, hands-on explanations, please refer to the [encode section]({{< ref "/docs/encode" >}}).
+This table offers a concise overview of the SCALE codec with examples. For more detailed, hands-on explanations, please refer to the [encode section]({{< ref "/encode" >}}).
 
 | Data type | Encoding Description |  SCALE decoded value	| SCALE encoded value |
 | --        | --          | -- | -- |
