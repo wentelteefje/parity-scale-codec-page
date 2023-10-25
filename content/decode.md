@@ -59,12 +59,7 @@ Ok(Second(Second(Second(Second(Second(First))))))
 Err(Error { cause: Some(Error { cause: Some(Error { cause: Some(Error { cause: Some(Error { cause: None, desc: "Maximum recursion depth reached when decoding" }), desc: "Could not decode `Example::Second.0`" }), desc: "Could not decode `Example::Second.0`" }), desc: "Could not decode `Example::Second.0`" }), desc: "Could not decode `Example::Second.0`" })
 ```
 
-## 1.2 Optimizations and Tricks
-TODO:
-- DecodeLength: Read the length of a collection (like Vec) without decoding everything.
-- EncodeAppend: Append an item without decoding all the other items. (like Vec)
-
-## 1.3 When One-to-One Decoding Fails: `BTreeSet`
+## 1.2 When One-to-One Decoding Fails: `BTreeSet`
 
 SCALE is intended to be a one-to-one encoding, meaning the decoding process should return the exact data that was initially encoded. However, a notable exception occurs when using a `BTreeSet`.
  
