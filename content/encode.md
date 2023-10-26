@@ -10,10 +10,6 @@ weight: 2
 math: true
 ---
 
-<!-- # 0. How to use this page
-
-This pages gives a list of common examples in the usage of the SCALE codec. The examples are ordered roughly by increasing complexity. It is advised to read the whole page in order, but more advanced users can also skip the more basic topics. For a quick overview see the [specification](/docs/specification). -->
-
 # 1 Little-endian Encoding
 
 SCALE encoded types are stored in little-endian (LE) mode. Little-endian systems store the least significant byte at the smallest memory address. In contrast, big-endian (BE) systems store the most significant byte at the smallest memory address. For example, consider the `u32` integer given by the hexadecimal representation $\text{0x0a0b0c0d}$. In LE systems the least significant byte, that is $\text{0x0d}$, would be stored at the smallest memory address. The next diagram illustrates how the integer would be stored in memory for the two different modes.
@@ -78,22 +74,18 @@ In this example, the output demonstrates the encoded form of a byte array, a tup
 
 Unsigned integers between $0$ and $2^{536} - 1$ can on average be more efficiently encoded using SCALE's compact encoding. While the ordinary fixed-width integer encoding depends on the size of the given integer's type (e.g. `u8`, `u16`, `u32`, ...), the compact encoding only looks at the number itself and disregards the type information. For example, the compact encodings of the integers `60u8`, `60u16` and `60u32` are all the same: $\text{Enc}\_{\text{SC}}^{\text{Comp}}(60) = \text{[0xf0]}$.
 
- It can be used by defining a wrapper struct and deriving the `Encode` trait for it. Here, the `codec(compact)` attribute of the derive macro makes the field following it use compact encoding.
+Compact encoding can be utilized by enclosing the number within the `Compact` struct, as illustrated in the example below.
 
 ```rust
-use parity_scale_codec::{Encode, HasCompact};
-use parity_scale_codec_derive::Encode;
-
-#[derive(Encode)]
-struct AsCompact<T: HasCompact>(#[codec(compact)] T);
+use parity_scale_codec::{Compact, Encode};
 
 fn main() {
     println!("{:02x?}", 0u8.encode());
     println!("{:02x?}", 0u16.encode());
     println!("{:02x?}", 0u32.encode());
-    println!("{:02x?}", AsCompact(60u8).encode());
-    println!("{:02x?}", AsCompact(60u16).encode());
-    println!("{:02x?}", AsCompact(60u32).encode());
+    println!("{:02x?}", Compact(60u8).encode());
+    println!("{:02x?}", Compact(60u16).encode());
+    println!("{:02x?}", Compact(60u32).encode());
 }
 [00]
 [00, 00]
@@ -121,19 +113,14 @@ $$ 42 = 0b101010 \Longrightarrow 0b101010{\color{red}00} = 168$$
 Therefore, the compact encoding of $n$ is given by the byte array $\text{Enc}\_{\text{SC}}^{\text{Comp}}(n) = \text{[0xa8]}$. Since there's only one byte in this mode the LE aspect cannot be seen.
 
 ```rust
-use parity_scale_codec::{Encode, HasCompact};
-use parity_scale_codec_derive::Encode;
-
-#[derive(Encode)]
-struct AsCompact<T: HasCompact>(#[codec(compact)] T);
+use parity_scale_codec::{Compact, Encode};
 
 fn main() {
     println!("{:02x?}", 42u8.encode());
     println!("{:02x?}", 42u32.encode());
-    println!("{:02x?}", AsCompact(42u8).encode());
-    println!("{:02x?}", AsCompact(42u32).encode());
+    println!("{:02x?}", Compact(42u8).encode());
+    println!("{:02x?}", Compact(42u32).encode());
 }
-
 [2a]
 [2a, 00, 00, 00]
 [a8]
@@ -147,17 +134,13 @@ Since the resulting integer exceeds one byte, the number is split up starting wi
 $$ 0b00000001\\;00010101 = \text{[0x15, 0x01]}.$$
 
 ```rust
-use parity_scale_codec::{Encode, HasCompact};
-use parity_scale_codec_derive::Encode;
-
-#[derive(Encode)]
-struct AsCompact<T: HasCompact>(#[codec(compact)] T);
+use parity_scale_codec::{Compact, Encode};
 
 fn main() {
     println!("{:02x?}", 69u8.encode());
     println!("{:02x?}", 69u32.encode());
-    println!("{:02x?}", AsCompact(69u8).encode());
-    println!("{:02x?}", AsCompact(69u32).encode());
+    println!("{:02x?}", Compact(69u8).encode());
+    println!("{:02x?}", Compact(69u32).encode());
 }
 [45]
 [45, 00, 00, 00]
@@ -171,17 +154,13 @@ $$ 65535 = 0b11111111\\;11111111 \Longrightarrow 0b11111111\\;11111111{\color{re
 Analogously to the previous example, the resulting integer exceeds two bytes and needs to be split up using little-endian mode. Additionally, we pad with leading zeros. The compact encoding $\text{Enc}\_{\text{SC}}^{\text{Comp}}(n)$ is given by the byte array:
 $$ 0b00000000\\;00000011\\;11111111\\;11111110 = \text{[0xfe, 0xff, 0x03, 0x00]}.$$
 ```rust
-use parity_scale_codec::{Encode, HasCompact};
-use parity_scale_codec_derive::Encode;
-
-#[derive(Encode)]
-struct AsCompact<T: HasCompact>(#[codec(compact)] T);
+use parity_scale_codec::{Compact, Encode};
 
 fn main() {
     println!("{:02x?}", 65535u16.encode());
     println!("{:02x?}", 65535u32.encode());
-    println!("{:02x?}", AsCompact(65535u16).encode());
-    println!("{:02x?}", AsCompact(65535u32).encode());
+    println!("{:02x?}", Compact(65535u16).encode());
+    println!("{:02x?}", Compact(65535u32).encode());
 }
 [ff, ff]
 [ff, ff, 00, 00]
@@ -209,17 +188,13 @@ $$\text{[0x07, 0x00, 0x00, 0x00, 0x00, 0x01]}.$$
 
 
 ```rust
-use parity_scale_codec::{Encode, HasCompact};
-use parity_scale_codec_derive::Encode;
-
-#[derive(Encode)]
-struct AsCompact<T: HasCompact>(#[codec(compact)] T);
+use parity_scale_codec::{Compact, Encode};
 
 fn main() {
     println!("{:02x?}", 1073741824u32.encode());
     println!("{:02x?}", 4294967296u64.encode());
-    println!("{:02x?}", AsCompact(1073741824u32).encode());
-    println!("{:02x?}", AsCompact(4294967296u64).encode());
+    println!("{:02x?}", Compact(1073741824u32).encode());
+    println!("{:02x?}", Compact(4294967296u64).encode());
 }
 [00, 00, 00, 40]
 [00, 00, 00, 00, 01, 00, 00, 00]
