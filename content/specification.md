@@ -33,8 +33,8 @@ This table offers a concise overview of the SCALE codec with examples. For more 
 | Tuple, Struct, Array | Encoded by concatenating the encodings of their respective elements consecutively. |`(1u8, true, "OK")` | `[01, 01, 08, 4f, 4b]` |
 | | | `MyStruct{id: 1u8, is_val: true, msg: "OK"}`| `[01, 01, 08, 4f, 4b]` |
 | | |`[64u16, 512u16]` | `[40, 00, 00, 02]` |
+| Enum | Encoded by the `u8`-index of the respective variant, followed by the encoded value if it is present. | `Example::Second(8u16)` | `[01, 08, 00]`|
 | Result | Encoded by prefixing the encoded inner value with `0x00` if the operation was successful, and `0x01` if the operation was unsuccessful. |`Ok::<u32, ()>(42u32)` | `[00, 2a, 00, 00, 00]` |
 | |  |`Err::<u32, ()>(())` | `[01]` |
 | Option | Encoded by prefixing the inner encoded value of `Some` with `0x01` and encoding `None` as `0x00`. |`Some(69u8)` | `[01, 45]` |
 |  |  | `None::<u8>` | `[00]` |
-| Enum | Encoded by the `u8`-index of the respective variant, followed by the encoded value if it is present. | `Example::Second(8u16)` | `[01, 08, 00]`|
